@@ -126,7 +126,7 @@ class ttLeptonJet(analysis):
       
       if p.Pt() < 30 or abs(p.Eta()) > 2.4:continue
       ### loose PFJetID is applied in order to reject jets induced by pure instrumental noise in the calorimeters
-      if not t.jetId & (0x1<<1): continue
+      if not (t.Jet_jetId[i] & (0x1<<1)): continue
 
       ## medium working point https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation94X
       if t.Jet_btagDeepC > 0.4941 : 
