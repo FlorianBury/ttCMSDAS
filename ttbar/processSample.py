@@ -4,7 +4,7 @@ sys.path.append(basepath)
 from ttLeptonJet import *
 from framework.fileReader import getDicFiles, GetAllInfoFromFile
 
-defaultPath = '/gpfs/ddn/cms/user/cmsdas/2019/ttbar/1l_skim/'
+defaultPath = "/storage/data/cms/store/user/piedavid/cmsdas2019ttbar/1l_skim/"
 
 xsecdic = {
  'HighEGJet':1,
@@ -40,7 +40,7 @@ def runSample(sample, options, path = '', nEv = -1):
     exit()
 
   #for sample in dic:
-  nEvents, nGenEvents, nSumOfWeights, isData = GetAllInfoFromFile([path + x for x in dic[sample]])
+  nEvents, nGenEvents, nSumOfWeights, isData = GetAllInfoFromFile([path + x for x in dic[sample]], cacheName=sample)
   thexsec = xsecdic[sample] if not isData else 1
   a = ttLeptonJet(path, sample, xsec = thexsec)
   a.SetOptions(options)
