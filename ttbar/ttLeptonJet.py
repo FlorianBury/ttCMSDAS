@@ -21,6 +21,12 @@ class ttLeptonJet(analysis):
     self.selJets = []
     self.selBJets = []
     self.pmet = TLorentzVector()
+    self.selLeptons_QCD = []
+    self.pmet_QCD = TLorentzVector()
+    self.selLeptons_noMet = []
+    self.pmet_noMet = TLorentzVector()
+    self.selLeptons_QCD_noMet = []
+    self.pmet_QCD_noMet = TLorentzVector()
 
     # Create output histograms
     self.categories = ["signal", "qcd", "signal_nomet", "qcd_nomet"]
@@ -50,6 +56,14 @@ class ttLeptonJet(analysis):
     self.selJets = []
     self.selBJets = []
     self.pmet = TLorentzVector()
+    self.selLeptons_QCD = []
+    self.pmet_QCD = TLorentzVector()
+    self.selLeptons_noMet = []
+    self.pmet_noMet = TLorentzVector()
+    self.selLeptons_QCD_noMet = []
+    self.pmet_QCD_noMet = TLorentzVector()
+
+
 
   def FillHistograms(self, sel, lepton, bjets, jets, pmet):
     ''' Fill all the histograms. Take the inputs from lepton list, jet list, pmet '''
@@ -98,17 +112,21 @@ class ttLeptonJet(analysis):
 
   def insideLoop(self, t):
     self.resetObjects()
+    signalPass1 = False
+    signalPass2 = False
 
-    ### Lepton selection
+    ### selection
     ###########################################
     if not self.isData: nGenLep = t.nGenDressedLepton 
-    
+
     ##### Jets
     for i in range (t.nJet):
       p = TLorentzVector()
       p.SetPtEtaPhiM(t.Jet_pt[i], t.Jet_eta[i], t.Jet_phi[i], t.Jet_mass[i])
       
       if p.Pt() < 30 or abs(p.Eta()) > 2.4:continue
+      ### loose PFJetID is applied in order to reject jets induced by pure instrumental noise in the calorimeters
+      if not t.jetId & (0x1<<1): continue
 
       ## medium working point https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation94X
       if t.Jet_btagDeepC > 0.4941 : 
@@ -136,7 +154,7 @@ class ttLeptonJet(analysis):
       if t.Muon_pfRelIso04_all[i] > 0.15 and t.MET_pt < 20 :
         self.selLeptons_QCD_noMet.append(lepton(p, charge, 13))
       elif t.Muon_pfRelIso04_all[i] < 0.15 and t.MET_pt < 20 :
-        self.selLeptons__noMet.append(lepton(p, charge, 13))
+        self.selLeptons_noMet.append(lepton(p, charge, 13))
       elif t.Muon_pfRelIso04_all[i] < 0.15 and t.MET_pt > 20 :
         self.selLeptons.append(lepton(p, charge, 13))
       else:
@@ -197,41 +215,32 @@ class ttLeptonJet(analysis):
       self.SFmuonErr = sqrt(self.SFmuonErr)
 
     # PU SF --> PLEASE CHECK THAT THE WEIGHTS ARE IN THE TREES THAT YOU'RE USING!
-    if not self.isData:
-      self.PUSF   = t.puWeight
-      self.PUUpSF = t.puWeightUp
-      self.PUDoSF = t.puWeightDown
-    else:
-      self.PUSF   = 1; self.PUUpSF = 1; self.PUDoSF = 1
+    self.PUSF   = 1; self.PUUpSF = 1; self.PUDoSF = 1
 
     ### Event selection
     ###########################################
-    ### We need one lepton, two bjets and two light jets 
-    ### Each of them must be at least 10 GeV
-    if not len(leps) >= 1:      return 
-    ### Fill the histograms
-    print 'leptons ',self.selLeptons[:1]
-    print 'bjets ',self.selBJets[:2]
-    print 'jets ',self.selJets[:2]
-    print 'met ',self.pmet
+    #print 'leptons ',len(self.selLeptons[:1])
+    #print 'bjets ',len(self.selBJets[:2])
+    #print 'jets ',len(self.selJets[:2])
+    #print 'met ',self.pmet
     
 
-### SIGNAL
+    ### SIGNAL
  
     ### One electron or muon and at least 4 jets
     ### veto events with more than one lepton.
     ### veto events containing leptons passing relaxed ID/ISO cuts. 
-    if not len(leps) >= 1:      return
-    if not len(selJets)>=2:     return
-    if not len(selBJets)>=2:     return
+    #print 'Finished filling'
+    if not len(self.selJets)>=2:     return
+    if not len(self.selBJets)>=2:     return
      
     ### Fill the histograms
-    self.FillHistograms("signal", self.selLeptons[:1], self.selBJets[:2], self.selJets[:2], self.pmet)
-
-
-    ### QCD selection : non-prompt and less isolated leptons
-    ### the control region : isolation cut is reversed 
-    
-    self.FillHistograms('qcd',self.selLeptons_QCD[:1], self.selBJets[:2], self.selJets[:2], self.pmet)
-    self.FillHistograms('qcd_nomet',self.selLeptons_QCD_noMet[:1], self.selBJets[:2], self.selJets[:2], self.pmet)
-    self.FillHistograms('signal_nomet',self.selLeptons_noMet[:1],self.selBJets[:2], self.selJets[:2], self.pmet)
+    if len(leps)==1:
+        self.FillHistograms("signal", self.selLeptons[:1], self.selBJets[:2], self.selJets[:2], self.pmet)
+    if len(self.selLeptons_QCD) == 1:
+        self.FillHistograms('qcd',self.selLeptons_QCD[:1], self.selBJets[:2], self.selJets[:2], self.pmet)
+    if len(self.selLeptons_QCD_noMet) == 1:
+        self.FillHistograms('qcd_nomet',self.selLeptons_QCD_noMet[:1], self.selBJets[:2], self.selJets[:2], self.pmet)
+    if len(self.selLeptons_noMet) == 1:
+        self.FillHistograms('signal_nomet',self.selLeptons_noMet[:1],self.selBJets[:2], self.selJets[:2], self.pmet)
+    #print 'Histogram filled'
