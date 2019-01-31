@@ -150,7 +150,7 @@ class analysis:
   def SetParams(self):
     ''' Once the input files are set, calculate all the needed parameters '''
     if len(self.files) == 0: return
-    _nEvents, _nGenEvents, _nSumOfWeights, _isData = GetAllInfoFromFile(self.files)
+    _nEvents, _nGenEvents, _nSumOfWeights, _isData = GetAllInfoFromFile(self.files, cacheName=self.fileName)
     self.nEvents       = _nEvents
     self.nGenEvents    = _nGenEvents
     self.nSumOfWeights = _nSumOfWeights
@@ -294,7 +294,7 @@ class analysis:
     elif self.index == -1: print '[INFO] Secuential mode!'
     print '[INFO] Cross section: ', self.xsec
     if self.options != '': print '[INFO] Options = ', self.options
-    if self.verbose >= 1: GetProcessInfo(self.files)
+    if self.verbose >= 1: GetProcessInfo(self.files, process=self.fileName)
     if self.nSlots == 1: self.loop(first, last)
     else:                self.multiloop(first, last)
     self.log()
@@ -303,6 +303,7 @@ class analysis:
     ''' Loop over the events and fill the histograms '''
     self.manageOutput()
     self.tchain = TChain(self.treeName,self.treeName)
+    print "Constructing the TChain"
     for f in self.files: self.tchain.Add(f)
     self.init()
     self.createHistos()

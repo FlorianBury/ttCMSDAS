@@ -147,9 +147,20 @@ def getDicFiles(inFolder):
   groupFilesInDic(listOfFiles,files)
   return listOfFiles
   
-def GetAllInfoFromFile(fname):
+def GetAllInfoFromFile(fname, cacheName=None, cacheFile="myCache.json"):
   ''' Returns a list with all the info of a file ''' 
+  infoCache = None
+  import json, os.path
+  if cacheFile and os.path.exists(cacheFile):
+    with open(cacheFile) as cF:
+      infoCache = json.load(cF)
+    if cacheName in infoCache:
+      out = infoCache[cacheName]
+      print "Retrieved file info from cache for {0}: {1}".format(cacheName, out)
+      return out
+  out = None
   if isinstance(fname, list):
+    print "Going through files for sample {0} to get sum, weights etc.".format(cacheName)
     nEvents = 0
     nGenEvents = 0
     nSumOfWeights = 0
@@ -159,7 +170,7 @@ def GetAllInfoFromFile(fname):
       nEvents += iE
       nGenEvents += iG
       nSumOfWeights += iS
-    return [nEvents, nGenEvents, nSumOfWeights, isData]
+    out = [nEvents, nGenEvents, nSumOfWeights, isData]
   elif isinstance(fname, str):
     f = TFile.Open(fname)
     t = f.Get('Events')
@@ -169,8 +180,20 @@ def GetAllInfoFromFile(fname):
     nGenEvents = hc.GetBinContent(1) if isinstance(hc,TH1F) else 1
     nSumOfWeights = hs.GetBinContent(1) if isinstance(hs,TH1F) else 1
     isData = not hasattr(t,'genWeight')
-    return [nEvents, nGenEvents, nSumOfWeights, isData]
-  else: print '[ERROR] [GetAllInfoFromFile]: wrong input' 
+    out = [nEvents, nGenEvents, nSumOfWeights, isData]
+  else:
+    print '[ERROR] [GetAllInfoFromFile]: wrong input' 
+  if cacheFile and cacheName and out: ## store in cache
+    if os.path.exists(cacheFile):
+      with open(cacheFile) as cF:
+        infoCache = json.load(cF)
+    else:
+      infoCache = dict()
+    print "Storing file info for {0}: {1}".format(cacheName, out)
+    infoCache[cacheName] = out
+    with open(cacheFile, "w") as cF:
+      json.dump(infoCache, cF)
+  return out
 
 def GetProcessInfo(path, process=''):
   ''' Prints all info from a process in path '''
@@ -178,7 +201,7 @@ def GetProcessInfo(path, process=''):
     files = path
     path, process, k = guessPathAndName(files[0])
   else: files = GetFiles(path, process)
-  nEvents, nGenEvents, nSumOfWeights, isData = GetAllInfoFromFile(files)
+  nEvents, nGenEvents, nSumOfWeights, isData = GetAllInfoFromFile(files, cacheName=process)
   fileType = '(Data)' if isData else ('(MC)')
   print '\n##################################################################'
   print ' path: ' + path

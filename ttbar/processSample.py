@@ -40,7 +40,7 @@ def runSample(sample, options, path = '', nEv = -1):
     exit()
 
   #for sample in dic:
-  nEvents, nGenEvents, nSumOfWeights, isData = GetAllInfoFromFile([path + x for x in dic[sample]])
+  nEvents, nGenEvents, nSumOfWeights, isData = GetAllInfoFromFile([path + x for x in dic[sample]], cacheName=sample)
   thexsec = xsecdic[sample] if not isData else 1
   a = ttLeptonJet(path, sample, xsec = thexsec)
   a.SetOptions(options)
