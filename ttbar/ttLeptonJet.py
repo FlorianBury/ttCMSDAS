@@ -221,9 +221,9 @@ class ttLeptonJet(analysis):
     ### One electron or muon and at least 4 jets
     ### veto events with more than one lepton.
     ### veto events containing leptons passing relaxed ID/ISO cuts. 
-    if not len(leps) >= 1;      return
-    if not len(selJets)>=2;     return
-    if not len(selBJets)>=2;     return
+    if not len(leps) >= 1:      return
+    if not len(selJets)>=2:     return
+    if not len(selBJets)>=2:     return
      
     ### Fill the histograms
     self.FillHistograms("signal", self.selLeptons[:1], self.selBJets[:2], self.selJets[:2], self.pmet)
