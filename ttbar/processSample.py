@@ -4,7 +4,7 @@ sys.path.append(basepath)
 from ttLeptonJet import *
 from framework.fileReader import getDicFiles, GetAllInfoFromFile
 
-defaultPath = '/gpfs/ddn/cms/user/cmsdas/2019/ttbar/dilepton_skim/'
+defaultPath = '/gpfs/ddn/cms/user/cmsdas/2019/ttbar/1l_skim/'
 
 xsecdic = {
  'HighEGJet':1,
