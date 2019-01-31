@@ -117,6 +117,8 @@ class ttLeptonJet(analysis):
         self.selJets.append(p)
 
     ##### Muons
+    QCDPass = False
+    NoMetPass = False   
     for i in range(t.nMuon):
       p = TLorentzVector()
       p.SetPtEtaPhiM(t.Muon_pt[i], t.Muon_eta[i], t.Muon_phi[i], t.Muon_mass[i])
@@ -124,15 +126,23 @@ class ttLeptonJet(analysis):
 
       # Tight ID, tight ISO, RelIso04 < 0.15, tight IP
       if not t.Muon_tightId[i]: continue # Tight ID
-      if not t.Muon_pfRelIso04_all[i] < 0.15: continue
       dxy = abs(t.Muon_dxy[i])
       dz  = abs(t.Muon_dz[i] )
       if dxy > 0.05 or dz > 0.1: continue
 
-      # pT > 12 GeV, |eta| < 2.4
-      if p.Pt() < 12 or abs(p.Eta()) > 2.4: continue
-      self.selLeptons.append(lepton(p, charge, 13))
-       
+      # pT > 30 GeV, |eta| < 2.1
+      if p.Pt() < 30 or abs(p.Eta()) > 2.1: continue
+
+      if t.Muon_pfRelIso04_all[i] > 0.15 and t.MET_pt < 20 :
+        self.selLeptons_QCD_noMet.append(lepton(p, charge, 13))
+      elif t.Muon_pfRelIso04_all[i] < 0.15 and t.MET_pt < 20 :
+        self.selLeptons__noMet.append(lepton(p, charge, 13))
+      elif t.Muon_pfRelIso04_all[i] < 0.15 and t.MET_pt > 20 :
+        self.selLeptons.append(lepton(p, charge, 13))
+      else:
+        self.selLeptons_QCD.append(lepton(p,charge,13))
+
+
     ##### Electrons
     for i in range(t.nElectron):
       p = TLorentzVector()
@@ -145,19 +155,27 @@ class ttLeptonJet(analysis):
       if not t.Electron_cutBased[i] >= 4: continue
       if not convVeto: continue
       relIso03 = t.Electron_pfRelIso03_all[i]
-      if   etaSC <= 1.479 and relIso03 > 0.0361: continue
-      elif etaSC >  1.479 and relIso03 > 0.094:  continue
+       
       dxy = abs(t.Electron_dxy[i])
       dz  = abs(t.Electron_dz[i] )
       if dxy > 0.05 or dz > 0.1: continue
 
-      # pT > 12 GeV, |eta| < 2.4
-      if p.Pt() < 12 or abs(p.Eta()) > 2.4: continue
-      self.selLeptons.append(lepton(p, charge, 11))
+      # pT > 30 GeV, |eta| < 2.1
+      if p.Pt() < 30 or abs(p.Eta()) > 2.1: continue
+      if   etaSC <= 1.479 and relIso03 > 0.0361: signalPass1 = True
+      elif etaSC >  1.479 and relIso03 > 0.094:  signalPass2 = True
+      if signalPass1 and signalPass2 and t.MET_pt < 20 :
+        self.selLeptons_noMet.append(lepton(p, charge, 11))
+      elif signalPass1 is False and signalPass2 is False and t.MET_pt < 20 :
+        self.selLeptons_QCD_noMet.append(lepton(p, charge, 11))
+      elif signalPass1 is False and signalPass2 is False and t.MET_pt > 20 :
+        self.selLeptons_QCD.append(lepton(p, charge, 11))
+      else:self.selLeptons.append(lepton(p, charge, 11))
 
     leps = self.selLeptons
     pts  = [lep.Pt() for lep in leps]
     self.selLeptons = [lep for _,lep in sorted(zip(pts,leps))]
+
 
     ##### MET 
     self.pmet = TLorentzVector()
@@ -192,5 +210,28 @@ class ttLeptonJet(analysis):
     ### Each of them must be at least 10 GeV
     if not len(leps) >= 1:      return 
     ### Fill the histograms
+    print 'leptons ',self.selLeptons[:1]
+    print 'bjets ',self.selBJets[:2]
+    print 'jets ',self.selJets[:2]
+    print 'met ',self.pmet
     
-    self.FillHistograms(SEL, self.selLeptons[:1], self.selBJets[:2], self.selJets[:2], self.pmet)
+
+### SIGNAL
+ 
+    ### One electron or muon and at least 4 jets
+    ### veto events with more than one lepton.
+    ### veto events containing leptons passing relaxed ID/ISO cuts. 
+    if not len(leps) >= 1;      return
+    if not len(selJets)>=2;     return
+    if not len(selBJets)>=2;     return
+     
+    ### Fill the histograms
+    self.FillHistograms("signal", self.selLeptons[:1], self.selBJets[:2], self.selJets[:2], self.pmet)
+
+
+    ### QCD selection : non-prompt and less isolated leptons
+    ### the control region : isolation cut is reversed 
+    
+    self.FillHistograms('qcd',self.selLeptons_QCD[:1], self.selBJets[:2], self.selJets[:2], self.pmet)
+    self.FillHistograms('qcd_nomet',self.selLeptons_QCD_noMet[:1], self.selBJets[:2], self.selJets[:2], self.pmet)
+    self.FillHistograms('signal_nomet',self.selLeptons_noMet[:1],self.selBJets[:2], self.selJets[:2], self.pmet)
